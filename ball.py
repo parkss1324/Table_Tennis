@@ -29,22 +29,41 @@ lower_orange = np.array([5, 150, 150])
 upper_orange = np.array([15, 255, 255])
 
 # 칼만 필터 (5차원: 중력 고려)
-kalman = cv2.KalmanFilter(5, 2)
-kalman.transitionMatrix = np.array([
-    [1, 0, 1, 0, 0.5],   # x' = x + vx + 0.5*ay
-    [0, 1, 0, 1, 0.5],   # y' = y + vy + 0.5*ay
-    [0, 0, 1, 0, 0],     # vx' = vx
-    [0, 0, 0, 1, 1],     # vy' = vy + ay
-    [0, 0, 0, 0, 1]      # ay' = ay
+kalman = cv2.KalmanFilter(5, 2) 
+# 5 = 5차원 상태 
+# x, y = 위치
+# vx, vy = 속도
+# ay = y축 가속도(중력 등)
+
+# 2 = 측정 벡터의 차원
+# x, y 위치만 측정
+
+# 이전 상태에서 다음 상태로의 변화(예측)를 모델링, 상태 전이 행렬
+kalman.transitionMatrix = np.array([ 
+    [1, 0, 1, 0, 0.5],   # x' = x + vx + 0.5*ay, 새로운 x 위치
+    [0, 1, 0, 1, 0.5],   # y' = y + vy + 0.5*ay, 새로운 y 위치
+    [0, 0, 1, 0, 0],     # vx' = vx, x축 속도 유지
+    [0, 0, 0, 1, 1],     # vy' = vy + ay, y축 속도 변화
+    [0, 0, 0, 0, 1]      # ay' = ay, 가속도 유지
 ], dtype=np.float32)
 
+# 위치를 측정
 kalman.measurementMatrix = np.array([
-    [1, 0, 0, 0, 0],
-    [0, 1, 0, 0, 0]
+    [1, 0, 0, 0, 0],     # x 위치만 측정
+    [0, 1, 0, 0, 0]      # y 위치만 측정
 ], dtype=np.float32)
 
-kalman.processNoiseCov = np.eye(5, dtype=np.float32) * 1e-2
+# 모델 노이즈 공분산 행렬
+kalman.processNoiseCov = np.eye(5, dtype=np.float32) * 1e-2 
+# 크기 5x5, 모델이 얼마나 불완전한지에 대한 추정
+# 값이 클수록 모델 예측을 덜 신뢰하고, 측정값을 더 신뢰
+# 1e-2는 적당한 수준의 모델 불확실성을 의미
+
+# 측정 노이즈 공분산 행렬
 kalman.measurementNoiseCov = np.eye(2, dtype=np.float32) * 1e-1
+# 크기 5x5, 측정이 얼마나 불완전한지에 대한 추정
+# 값이 클수록 센서 측정을 덜 신뢰하고, 모델 예측을 더 신뢰
+# 1e-1는 측정값에 0.1 정도의 오차가 있을 것이라 보는 것을 의미
 
 trajectory = []
 time_ahead = 10

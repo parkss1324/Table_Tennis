@@ -65,13 +65,20 @@ kalman.measurementNoiseCov = np.eye(2, dtype=np.float32) * 1e-1
 # 값이 클수록 센서 측정을 덜 신뢰하고, 모델 예측을 더 신뢰
 # 1e-1는 측정값에 0.1 정도의 오차가 있을 것이라 보는 것을 의미
 
-trajectory = []
-time_ahead = 10
+trajectory = [] # 공의 이전 위치(예측 위치 포함)들을 저장하여 이동 경로를 기록
+time_ahead = 10 # 10 프레임 분량의 미래 위치를 예측하여 시각화
 
 # 추적기
-tracker = cv2.legacy.TrackerKCF_create()
-tracking = False
+tracker = cv2.legacy.TrackerKCF_create() 
+# 한 번 검출한 객체(공)의 위치를 이후 프레임에서도 검출 없이 추적
+# 칼만 필터와 별도로 이미지 기반 추적을 수행
+
+tracking = False 
+# 초기값으로 처음 공을 찾으면 True로 바꾸어 추적 시작
+# 매 프레임마다 이 값에 따라 추적기 동작을 다르게 처리
+
 kalman_initialized = False
+# 칼만 필터 재설정(과거 상태 정보가 유지되지 않는 것)을 방지
 
 while True:
     ret, img = cap.read()
@@ -84,22 +91,27 @@ while True:
 
     # 가우시안 블러 적용 (노이즈 감소)
     blurred_img = cv2.GaussianBlur(img, (5, 5), 0)
+    # 값이 커지면 공의 경계가 흐릿해지고 추적 정확도가 떨어짐
+    # 값이 작으면 노이즈 제거에 약함
 
     # 이미지 선명화 (Sharpening)
-    kernel = np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]])  # 기본 sharpen 필터
+    kernel = np.array([[0, -1, 0], 
+                        [-1, 5, -1], 
+                        [0, -1, 0]]) # 기본 sharpen 필터
     sharpened_img = cv2.filter2D(blurred_img, -1, kernel)
 
-    hsv = cv2.cvtColor(sharpened_img, cv2.COLOR_BGR2HSV)
-    mask = cv2.inRange(hsv, lower_orange, upper_orange)
+    hsv = cv2.cvtColor(sharpened_img, cv2.COLOR_BGR2HSV) # 색 추출에 유리
+    mask = cv2.inRange(hsv, lower_orange, upper_orange) # 범위 내 주황색 검출
 
-    # 마스크 처리 후 후처리 (더 부드럽게 하기 위해 모폴로지 연산)
-    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, np.ones((5, 5), np.uint8))
-    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, np.ones((5, 5), np.uint8))
+    # 흰색 영역(주황색)을 더 정확하게 추출
+    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, np.ones((5, 5), np.uint8)) # 잡음 제거 및 경계 강화
+    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, np.ones((5, 5), np.uint8)) # 구멍 채우기와 물체 연결
 
+    # 윤곽선 찾기
     contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     for contour in contours:
-        if cv2.contourArea(contour) > 5:
+        if cv2.contourArea(contour) > 5: # 작은 영역(노이즈) 무시
             M = cv2.moments(contour)
             if M["m00"] != 0:
                 cX = int(M["m10"] / M["m00"])
@@ -159,7 +171,7 @@ while True:
         if not (np.isnan(pred_x) or np.isnan(pred_y)):
             trajectory.append((pred_x, pred_y))
 
-    # 궤적 그리기
+    # 궤적 그리기(파랑)
     for i in range(1, len(trajectory)):
         cv2.line(sharpened_img, trajectory[i - 1], trajectory[i], (255, 0, 0), 2)
 
@@ -174,6 +186,8 @@ while True:
 
         if len(unique_xs) >= 2:
             cs = CubicSpline(unique_xs, unique_ys)
+
+            # 햔재 예측 위치 pred_x부터 fps * time_ahead(약 10프레임치 거리)까지 Cubic Spline을 이용해 예측 궤적 계산
             future_xs = np.arange(pred_x, pred_x + np.sign(future_velocity_x) * fps * time_ahead, 2)
             future_points = []
             for fx in future_xs:
@@ -186,6 +200,8 @@ while True:
 
     out.write(sharpened_img)
     cv2.imshow("Improved Tracking & Prediction", sharpened_img)
+
+    #cv2.imshow("Test", mask)
 
     key = cv2.waitKey(10) & 0xFF
     if key == 27:  # ESC

@@ -93,6 +93,7 @@ while True:
     blurred_img = cv2.GaussianBlur(img, (5, 5), 0)
     # 값이 커지면 공의 경계가 흐릿해지고 추적 정확도가 떨어짐
     # 값이 작으면 노이즈 제거에 약함
+    # 5, 7 중 테스트해봐야 함
 
     # 이미지 선명화 (Sharpening)
     kernel = np.array([[0, -1, 0], 
@@ -110,30 +111,37 @@ while True:
     # 윤곽선 찾기
     contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-    for contour in contours:
-        if cv2.contourArea(contour) > 5: # 작은 영역(노이즈) 무시
+    for contour in contours: # 마스크에서 검출된 모든 윤관선들에 대해 반복
+        if cv2.contourArea(contour) > 5: 
+        # 작은 영역(노이즈) 무시, 객체처럼 보이는 윤곽선만 처리
+        # 50 ~ 100 정도로 올려서 잡음 제거 테스트해봐야 함
+
             M = cv2.moments(contour)
-            if M["m00"] != 0:
-                cX = int(M["m10"] / M["m00"])
-                cY = int(M["m01"] / M["m00"])
+            if M["m00"] != 0: # 면적
+                # 무게 중심(중심 좌표)를 계산
+                cX = int(M["m10"] / M["m00"]) # x좌표의 평균, m10 = x좌표
+                cY = int(M["m01"] / M["m00"]) # y좌표의 평균, m01 = y좌표
 
                 if not tracking:
-                    bbox = cv2.boundingRect(contour)
-                    tracker.init(sharpened_img, bbox)
-                    tracking = True
+                    bbox = cv2.boundingRect(contour) # 주어진 윤곽선을 완전히 포함하는 가장 작은 직사각형을 구함
+                    tracker.init(sharpened_img, bbox) # 객체의 위치를 기반으로 바운딩 박스를 만들고, 추적기 초기화
+                    tracking = True # 추적 시작
 
-                    # 칼만 필터 초기화 (중력 포함)
-                    kalman.statePre = np.array([[np.float32(cX)],
-                                                [np.float32(cY)],
-                                                [0],
-                                                [0],
-                                                [0]], np.float32)
-                    kalman.statePost = kalman.statePre.copy()
-                    kalman_initialized = True
+                    # 칼만 필터 초기화(추적을 안정화하기 위한 초기 상태 설정)
+                    kalman.statePre = np.array([[np.float32(cX)], # 검출된 물체의 중심 x좌표
+                                                [np.float32(cY)], # 검출된 물체의 중심 y좌표
+                                                [0],              # x 속도(vx)
+                                                [0],              # y 속도(vy)
+                                                [0]], np.float32) # 가속도
+                    kalman.statePost = kalman.statePre.copy() # 측정 = 예측, 초기값
+                    kalman_initialized = True # 예측과 측정 시작
 
-                measurement = np.array([[np.float32(cX)], [np.float32(cY)]])
-                kalman.correct(measurement)
-                cv2.circle(sharpened_img, (cX, cY), 5, (0, 255, 0), -1)
+                measurement = np.array([[np.float32(cX)], [np.float32(cY)]]) # 공이 측정된 위치를 칼만 필터에 넣기 위해 변환
+                kalman.correct(measurement) 
+                # 예측된 상태(statePre)와 실제 측정(measurement)을 비교하여 현재 상태를 더 정확하게 보정
+                # 예측이 측정값과 가까워지고, 다음 예측(predict) 단계가 더 정확해짐
+
+                cv2.circle(sharpened_img, (cX, cY), 5, (0, 255, 0), -1) # 초록색 점
 
     # 매 프레임 보정: 추적 결과를 보정값으로 사용
     if tracking:

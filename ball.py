@@ -17,10 +17,9 @@ if not cap.isOpened():
     print("⚠️ 카메라를 열 수 없습니다.")
     exit()
 
-# 저장 경로
+# 저장 경로 및 형식
 save_folder = '/Users/parksungsu/Documents/python_opencv'
 os.makedirs(save_folder, exist_ok=True)
-
 output_path = os.path.join(save_folder, 'ball_video.mp4')
 fps = 30
 fourcc = cv2.VideoWriter_fourcc(*'avc1')
@@ -48,8 +47,8 @@ kalman = cv2.KalmanFilter(5, 2)
 
 # 이전 상태에서 다음 상태로의 변화(예측)를 모델링, 상태 전이 행렬
 kalman.transitionMatrix = np.array([ 
-    [1, 0, 1, 0, 0.5],   # x' = x + vx + 0.5*ay, 새로운 x 위치
-    [0, 1, 0, 1, 0.5],   # y' = y + vy + 0.5*ay, 새로운 y 위치
+    [1, 0, 1, 0, 0.5],   # x' = x + vx + 0.5 * ay, 새로운 x 위치
+    [0, 1, 0, 1, 0.5],   # y' = y + vy + 0.5 * ay, 새로운 y 위치
     [0, 0, 1, 0, 0],     # vx' = vx, x축 속도 유지
     [0, 0, 0, 1, 1],     # vy' = vy + ay, y축 속도 변화
     [0, 0, 0, 0, 1]      # ay' = ay, 가속도 유지

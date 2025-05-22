@@ -141,28 +141,33 @@ while True:
                 # 예측된 상태(statePre)와 실제 측정(measurement)을 비교하여 현재 상태를 더 정확하게 보정
                 # 예측이 측정값과 가까워지고, 다음 예측(predict) 단계가 더 정확해짐
 
-                cv2.circle(sharpened_img, (cX, cY), 5, (0, 255, 0), -1) # 초록색 점
+                cv2.circle(sharpened_img, (cX, cY), 5, (0, 255, 0), -1) # 초록색 점(측정된 위치 시각화)
 
     # 매 프레임 보정: 추적 결과를 보정값으로 사용
     if tracking:
-        success, bbox = tracker.update(sharpened_img)
-        if success:
-            (x, y, w, h) = [int(v) for v in bbox]
-            cv2.rectangle(sharpened_img, (x, y), (x + w, y + h), (0, 255, 0), 2)
-            if kalman_initialized:
-                center = np.array([[np.float32(x + w / 2)], [np.float32(y + h / 2)]])
-                kalman.correct(center)
-        else:
-            if kalman_initialized:
-                prediction = kalman.predict()
-                pred_x, pred_y = int(prediction[0, 0]), int(prediction[1, 0])
-                cv2.putText(sharpened_img, f"Predicted: ({pred_x}, {pred_y})", (pred_x, pred_y),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 255), 2)
 
-    # 예측 및 궤적 기록
+        success, bbox = tracker.update(sharpened_img) # 현재 프레임에서 객체 추적
+
+        if success: # 추적 성공
+            (x, y, w, h) = [int(v) for v in bbox] # 바운딩 박스를 정수로 변환
+            cv2.rectangle(sharpened_img, (x, y), (x + w, y + h), (0, 255, 0), 2) # 초록색 직사각형
+
+            if kalman_initialized:
+                center = np.array([[np.float32(x + w / 2)], [np.float32(y + h / 2)]]) # 중심 좌표 계산
+                kalman.correct(center) # 칼만 필터의 측정값(measurement)으로 사용하여 필터를 보정
+
+        else:       # 추적 실패
+            if kalman_initialized: # 칼만 필터만 사용하여 위치를 예측
+                prediction = kalman.predict()
+                pred_x, pred_y = int(prediction[0, 0]), int(prediction[1, 0]) # 예측 x,y 좌표
+
+                cv2.putText(sharpened_img, f"Predicted: ({pred_x}, {pred_y})", (pred_x, pred_y), # 추적 위치 좌표 및 예상 좌표
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 255), 2) # 빨강색 글씨
+
+    # 위치 예측 및 궤적 기록
     if kalman_initialized:
-        prediction = kalman.predict()
-        pred_x, pred_y = int(prediction[0, 0]), int(prediction[1, 0])
+        prediction = kalman.predict() # 현재 상태(state)로부터 다음 위치 및 속도 등을 예측
+        pred_x, pred_y = int(prediction[0, 0]), int(prediction[1, 0]) # 예측 x, y 위치
 
         # 속도(기울기)를 반영한 예측
         prev_velocity_x = int(prediction[2, 0])  # 이전 속도

@@ -1,7 +1,15 @@
+# 코드 흐름
+# 실시간 영상 촬영
+# Kalman Filter 구성{공의 위치(x, y), 속도(vx, vy), 중력을 예측한 가속도(ay)}
+# 공 검출 및 중심 좌표 계산
+# TrackerKCF로 공 추적 
+# Kalman Filter 보정 및 예측
+# 궤적 시각화{과거(파란색), 미래(노란색)}
+
 import cv2
 import numpy as np
 import os
-from scipy.interpolate import CubicSpline  # CubicSpline 임포트 추가
+from scipy.interpolate import CubicSpline
 
 # 카메라 설정
 cap = cv2.VideoCapture(0)
@@ -181,6 +189,7 @@ while True:
         pred_x += future_velocity_x
         pred_y += future_velocity_y
 
+        # pred_x와 pred_y 둘 다 수치적으로 유효하면 이동 경로(trajectory)에 추가
         if not (np.isnan(pred_x) or np.isnan(pred_y)):
             trajectory.append((pred_x, pred_y))
 
@@ -190,24 +199,39 @@ while True:
 
     # 미래 궤적 예측 (Cubic Spline)
     if len(trajectory) >= 5:
-        traj_np = np.array(trajectory)
-        xs = traj_np[:, 0]
-        ys = traj_np[:, 1]
+    # trajectory에는 공의 예측 위치(pred_x, pred_y)가 매 프레임마다 누적되어 있음
+    # 궤적 데이터가 5개 이상일 때, 너무 적은 점으로는 곡선을 만들기 어렵기 때문
+    # 이 점들을 활용, 곡선 형태로 미래 궤적을 예측하기 위해 Cubic Spline 보간을 적용
 
-        unique_xs, unique_indices = np.unique(xs, return_index=True)
-        unique_ys = ys[unique_indices]
+        traj_np = np.array(trajectory) # 공의 예측 위치들을 numpy 배열로 변환
+        xs = traj_np[:, 0] # 공의 예측된 x좌표
+        ys = traj_np[:, 1] # 공의 예측된 y좌표
 
-        if len(unique_xs) >= 2:
-            cs = CubicSpline(unique_xs, unique_ys)
+        unique_xs, unique_indices = np.unique(xs, return_index=True) # 중복된 x값을 제거
+        unique_ys = ys[unique_indices] # 중복 제거된 x값에 맞는 y값만 선택
+
+        if len(unique_xs) >= 2: # 중복을 제거한 x배열, 2개 이상이 점이 있어야 보간(Cubic Spline)할 수 있음
+            cs = CubicSpline(unique_xs, unique_ys) 
+            # 삼차 스플라인 보간기 함수(곡선이 부드럽게 연결됨)
+            # 주어진 x/y 점들로부터 부드러운 곡선을 자동으로 계산
+            # cs는 x를 넣으면 그에 대응하는 y값을 보간해서 반환해주는 함수가 됨 
 
             # 햔재 예측 위치 pred_x부터 fps * time_ahead(약 10프레임치 거리)까지 Cubic Spline을 이용해 예측 궤적 계산
             future_xs = np.arange(pred_x, pred_x + np.sign(future_velocity_x) * fps * time_ahead, 2)
+            # pred_x = 현재 위치의 x좌표
+            # np.sign(future_velocity_x) = 속도의 방향(음수 = -1, 양수 = +1)
+            # fps * time_ahead = 예측할 프레임 수(10프레임 후까지 예측)
+            # 2 = x좌표 간격(2픽셀 간격으로 예측)
+
             future_points = []
             for fx in future_xs:
-                fy = int(cs(fx))
+                fy = int(cs(fx)) # 삼차 스플라인으로 구한 fx(예측 움직임)에 대한 y값 예측
+
+                # 이미지 범위 안에 있는 좌표만 저장, shape[1] = 너비, [0] = 높이
                 if 0 <= fx < sharpened_img.shape[1] and 0 <= fy < sharpened_img.shape[0]:
                     future_points.append((fx, fy))
 
+            # 미래 좌표들을 노란색 선으로 이어서 그림
             for i in range(1, len(future_points)):
                 cv2.line(sharpened_img, future_points[i - 1], future_points[i], (0, 255, 255), 2)
 

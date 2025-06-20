@@ -9,8 +9,8 @@ import cv2                                                # OpenCV 관련 라이
 import numpy as np                                        # 계산 관련 라이브러리
 import os                                                 # 영상 저장 관련 라이브러리
 from scipy.interpolate import CubicSpline                 # 곡선 관련 라이브러리
-from filterpy.kalman import UnscentedKalmanFilter as UKF  # 
-from filterpy.kalman import MerweScaledSigmaPoints        #
+from filterpy.kalman import UnscentedKalmanFilter as UKF  # 비선형 칼만 필터(UKF)의 객체를 가져오는 코드
+from filterpy.kalman import MerweScaledSigmaPoints        # 시그마 포인트 집합을 생성하는 도구
 
 # 상태 전이 함수: 위치, 속도, 가속도 포함 (6차원 상태)
 # 현재 상태 x에 대해, 시간 간격 dt가 지나면 다음 상태에 대해 예측

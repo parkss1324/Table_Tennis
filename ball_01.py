@@ -36,7 +36,7 @@ out = cv2.VideoWriter(output_path, fourcc, fps, (640, 480))
 
 # 탁구공 HSV 범위
 lower_orange = np.array([5, 150, 100])
-upper_orange = np.array([15, 255, 255])
+upper_orange = np.array([20, 255, 255])
 
 # 탁구공 궤적 좌표 저장 리스트
 real_trajectory = []
@@ -104,17 +104,14 @@ while True:
     # 모션 블러(움직임이 빨라지면 영상에서 흐릿하게 관찰) 대비를 위한 샤프닝 필터 적용
     sharpened_img = cv2.filter2D(img, -1, np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]]))
 
-    # 노이즈 감소(값이 커지면 추적 정확도가 떨어지고 값이 작아지면 노이즈 제거에 약함)
-    blurred_img = cv2.GaussianBlur(sharpened_img, (5, 5), 0)
-
     # 색 추출에 유리
-    hsv_img = cv2.cvtColor(blurred_img, cv2.COLOR_BGR2HSV)
+    hsv_img = cv2.cvtColor(sharpened_img, cv2.COLOR_BGR2HSV)
 
     # 주황색 마스크 생성
     mask = cv2.inRange(hsv_img, lower_orange, upper_orange)
 
     # 마스크 정제(노이즈 제거)
-    kernel = np.ones((3, 3), np.uint8)
+    kernel = np.ones((1, 1), np.uint8)
     mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
     mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
 

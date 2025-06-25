@@ -170,7 +170,7 @@ while True:
             cv2.line(img, pt1, pt2, (0, 255, 0), 2)
 
     ### 탁구공 예측 궤적 설정 ###
-    future_steps = int(3.0 / dt)                                            # dt(30bps)를 사용, 3초 후를 예측하기 위해 future_steps(90 프레임)을 선언
+    future_steps = int(0.5 / dt)                                            # dt(30bps)를 사용, 0.5초 후를 예측하기 위해 future_steps(15 프레임)을 선언
     x_future = ukf.x.copy()                                                 # 위치, 속도, 가속도 0으로 설정
     predicted_trajectory = []                                               # 탁구공 궤적 예상 좌표 저장 리스트   
 

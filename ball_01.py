@@ -126,7 +126,7 @@ while True:
 
     for cnt in contours:
         area = cv2.contourArea(cnt)                                         # 윤곽선의 면적(픽셀 개수)를 계산
-        if area > 400:                                                      # 픽셀값보다 작은 영역 무시
+        if area > 50:                                                      # 픽셀값보다 작은 영역 무시
             x, y, w, h = cv2.boundingRect(cnt)                              # 윤곽선을 포함하는 최소 사각형의 x, y, w(너비), h(높이) 반환
             cx, cy = x + w // 2, y + h // 2                                 # 가운데 좌표 = 탁구공의 중심 추정
             cv2.rectangle(img, (x, y), (x + w, y + h), (255, 0, 0), 2)      # 탁구공의 영역에 파란색 사각형

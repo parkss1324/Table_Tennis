@@ -27,4 +27,4 @@ Visual Studio Code와 OpenCV, 머신러닝 기술을 활용하여 알고리즘�
 - 실제 궤적을 기반으로 예측 궤적을 구현합니다.
 
 ## ✒️ 칼만 필터
-- 칼만 필터 개념: [[https://www.intel.co.kr/content/www/kr/ko/manufacturing/what-is-machine-vision.html](https://terms.naver.com/entry.naver?docId=3347329&cid=40942&categoryId=32845)](https://ko.wikipedia.org/wiki/%EC%B9%BC%EB%A7%8C_%ED%95%84%ED%84%B0)
+- 칼만 필터 개념: https://ko.wikipedia.org/wiki/%EC%B9%BC%EB%A7%8C_%ED%95%84%ED%84%B0

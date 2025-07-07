@@ -1,1 +1,30 @@
 # Table_Tennis
+Visual Studio Code와 OpenCV, 머신러닝 기술을 활용하여 알고리즘을 비교하는 소스 코드입니다.
+
+## 👨‍🏫 프로젝트 소개
+'OpenCV' 내 칼만 필터 라이브러리를 활용하여 탁구공을 검출하고,<br>
+실제 궤적과 1초 후 궤적을 화면에 나타내게 합니다.
+ 
+## ⏲️ 개발 기간 
+- 2025.06 ~ 현재진행형
+- 계획 수립
+- 탁구공 검출
+- 실제 궤적 기록
+- 칼만 필터 설정
+- 실제 궤적을 기반으로 한 예측 궤적 구현
+- 포트폴리오 제작
+  
+## 🧑‍🤝‍🧑 개발 인원 : 1
+- **박성수** : 전체 프로젝트 기획 및 개발
+
+## 💻 기술 스택 및 개발 환경
+- **기술 스택** : Python, Machine Vision
+- **소프트웨어** : Visual Studio Code, OpenCV
+
+## 📌 주요 기능
+- OpenCV 내 칼만 필터 라이브러리를 이용합니다.
+- 곡선 이미지 검출에 적합한 비선형 칼만 필터로 곡선 운동을 하는 탁구공의 궤적을 예측합니다.
+- 실제 궤적을 기반으로 예측 궤적을 구현합니다.
+
+## ✒️ 칼만 필터
+- 칼만 필터 개념: [[https://www.intel.co.kr/content/www/kr/ko/manufacturing/what-is-machine-vision.html](https://terms.naver.com/entry.naver?docId=3347329&cid=40942&categoryId=32845)](https://ko.wikipedia.org/wiki/%EC%B9%BC%EB%A7%8C_%ED%95%84%ED%84%B0)
